@@ -1,0 +1,4 @@
+server
+client
+unit_tests
+*.o

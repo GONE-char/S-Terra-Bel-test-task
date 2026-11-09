@@ -1,0 +1,29 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Каждый шаг завершает job при ошибке (set -e в раннере по умолчанию),
+      # лог упавшего шага остаётся в интерфейсе Actions.
+      - name: Build (-Wall -Wextra -Werror)
+        run: make all
+
+      - name: Unit tests
+        run: make test
+
+      - name: Smoke exchange over UDP
+        run: |
+          ./server 5555 > server.log 2>&1 &
+          SRV=$!
+          sleep 1
+          ./client 127.0.0.1 5555
+          sleep 1
+          kill "$SRV" 2>/dev/null || true
+          echo "--- server.log ---"
+          cat server.log
+          grep -q "ok exchange=" server.log
